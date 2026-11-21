@@ -1,48 +1,66 @@
 #!/usr/bin/env python3
-"""make.fun entry: The Passport Page of a Country That Isn't There.
+"""make.fun entry: The Passport Page of a Country That Isn't There (v2).
 
 Writes /output/entry.png — an open passport spread for the invented
-Republic of Valdoria. Primary renderer uses Pillow; if Pillow is
-missing in the grading sandbox, a pure-stdlib renderer draws a
-simplified version of the same spread so the program never crashes.
-No network. Deterministic output.
+Republic of Solmarra, a harbour island nation reachable only by sea.
+Data page: photorealistic portrait (loaded from portrait.jpg next to
+this file), bilingual data rows, signature, observations and a correct
+ICAO MRZ. Visa page: eight stamps from neighbouring ports, all dated
+after the 09 FEB 2024 issue date, a Conditions of Issue box, a red
+"arrival by sea only" stamp and a round ferry-passage fee stamp.
+
+Primary renderer uses Pillow; if Pillow is missing in the grading
+sandbox, a pure-stdlib renderer draws a simplified version of the
+same spread so the program never crashes. No network. Deterministic.
 """
 import os
 import sys
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+PORTRAIT_FILE = os.path.join(HERE, "portrait.jpg")
 OUT = "/output/entry.png"
 W, H = 1024, 1024
 
 # ---------------------------------------------------------------- data
-COUNTRY = "REPUBLIC OF VALDORIA"
-COUNTRY_NATIVE = "REPUBLIKA E VALDORISË"
-CAPITAL = "KESTREL"
-LANGUAGE = "Valdorian"
+COUNTRY = "REPUBLIC OF SOLMARRA"
+COUNTRY_NATIVE = "REPUBLIKA E SOLMARRËS"
+CAPITAL = "PORT SOLMAR"
+LANGUAGE = "Solmaran"
+CURRENCY = "SOL"
 
 HOLDER = {
-    "surname": "MARAKU",
-    "given": "ELENA DRITA",
+    "surname": "KALDRIS",
+    "given": "MARA ILSE",
     "sex": "F",
-    "dob": "14 JUN 1988",
+    "dob": "03 SEP 1979",
     "pob": CAPITAL,
-    "nationality": "VALDORIAN",
-    "number": "VA482917",
-    "issue": "12 MAR 2024",
-    "expiry": "12 MAR 2034",
-    "authority": CAPITAL,
+    "nationality": "SOLMARAN",
+    "number": "SLM517204",
+    "issue": "09 FEB 2024",
+    "expiry": "09 FEB 2034",
+    "authority": "HARBOUR OFFICE",
 }
 
-# Neighbouring countries; every stamp is dated AFTER the 12 MAR 2024 issue.
+# Every stamp is dated AFTER the 09 FEB 2024 issue date, in travel order.
 STAMPS = [
-    ("DRAVNIA", "ARRIVAL", "28 JUN 2024", "ZELENGRAD", (31, 84, 160)),
-    ("OSTREK", "DEPARTURE", "03 SEP 2024", "TARNOV", (122, 54, 140)),
-    ("MIRAVEL", "ARRIVAL", "17 JAN 2025", "PORT MIRA", (178, 58, 46)),
-    ("KORVATH", "DEPARTURE", "09 MAY 2026", "KORVATH BORDER", (26, 110, 74)),
+    ("SOLMARRA", "DEPARTURE", "22 MAR 2024", "PORT SOLMAR", (178, 58, 46)),
+    ("DRAVNIA", "ARRIVAL", "25 MAR 2024", "KESTREL PORT", (31, 84, 160)),
+    ("DRAVNIA", "DEPARTURE", "08 APR 2024", "KESTREL PORT", (31, 84, 160)),
+    ("KESSARA", "ARRIVAL", "19 MAY 2024", "LUMEN CITY", (26, 110, 74)),
+    ("KESSARA", "DEPARTURE", "02 JUN 2024", "LUMEN CITY", (26, 110, 74)),
+    ("SOLMARRA", "ARRIVAL", "07 JUN 2024", "PORT SOLMAR", (178, 58, 46)),
+    ("OSTREK", "ARRIVAL", "14 SEP 2024", "TARNOV", (122, 54, 140)),
+    ("OSTREK", "DEPARTURE", "28 SEP 2024", "TARNOV", (122, 54, 140)),
 ]
 
-VISA_TEXT = ("VISA — VALID FOR THE THREE VALLEYS ONLY. "
-             "HOLDER MUST REGISTER AT KESTREL WITHIN 7 DAYS OF ENTRY.")
-FEE_TEXT = "FEE PAID — 12 VALDA"
+CONDITIONS = ("The bearer must report to the Harbourmaster within 48 hours "
+              "of landing in Solmarra. The outer isles are closed from "
+              "November to March without a licence from the Lighthouse "
+              "Office, Port Solmar.")
+OBSERVATION = ("This passport is valid only when the bearer carries the "
+               "current Solmaran tide tables.")
+SEA_ONLY = ("ARRIVAL BY SEA ONLY", "NO AIRPORT IN", "SOLMARRA")
+FERRY_FEE = ("FERRY PASSAGE", "PAID", "12 SOL")
 
 
 # ---------------------------------------------------------------- MRZ (ICAO 9303, TD3)
@@ -58,17 +76,32 @@ def mrz_check(s):
 
 
 def mrz_lines():
-    name = "MARAKU<<ELENA<DRITA"
-    line1 = ("P<VAL" + name).ljust(44, "<")
-    doc = "VA482917<"
-    body = (doc + mrz_check(doc) + "VAL" + "880614" + mrz_check("880614")
-            + "F" + "340312" + mrz_check("340312") + "<" * 15)
+    line1 = ("P<SLM" + "KALDRIS<<MARA<ILSE").ljust(44, "<")
+    doc = "SLM517204<"
+    body = (doc + mrz_check(doc) + "SLM" + "790903" + mrz_check("790903")
+            + "F" + "340209" + mrz_check("340209") + "<" * 14)
     line2 = body + mrz_check(body)
     assert len(line1) == 44 and len(line2) == 44, (line1, line2)
     return line1, line2
 
 
-# ---------------------------------------------------------------- fonts (PIL)
+# ---------------------------------------------------------------- colours
+INK = (32, 38, 32)
+NAVY = (26, 52, 88)
+NAVY_DK = (18, 38, 66)
+GOLD = (176, 132, 40)
+COVER = (16, 34, 58)
+PAPER = (247, 242, 228)
+PAPER_EDGE = (226, 216, 192)
+LABEL = (96, 104, 90)
+RED = (178, 58, 46)
+FAINT = (233, 226, 202)
+SKIN = (216, 178, 140)
+SKIN_SH = (198, 158, 120)
+HAIR = (52, 38, 26)
+
+
+# ---------------------------------------------------------------- PIL renderer
 def load_fonts():
     """Return a dict of truetype fonts; fall back to PIL's default font."""
     from PIL import ImageFont
@@ -77,9 +110,11 @@ def load_fonts():
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
     ]
     have = [p for p in cands if os.path.exists(p)]
@@ -87,6 +122,7 @@ def load_fonts():
     reg = next((p for p in have if "Bold" not in p and "Sans" in p
                 and "Mono" not in p), None)
     serif_b = next((p for p in have if "Serif-Bold" in p), None)
+    serif_i = next((p for p in have if "Serif-Italic" in p), None)
     mono = next((p for p in have if "Mono" in p), None)
 
     def f(path, size):
@@ -98,33 +134,21 @@ def load_fonts():
         return ImageFont.load_default()
 
     return {
-        "head": f(serif_b or bold, 27),
-        "head_small": f(bold, 20),
+        "head": f(serif_b or bold, 26),
+        "head_small": f(bold, 19),
         "sub": f(reg, 13),
-        "label": f(bold, 12),
-        "value": f(bold, 16),
+        "label": f(bold, 11),
+        "value": f(bold, 15),
         "value_sm": f(reg, 15),
+        "sig": f(serif_i or reg, 24),
         "mrz": f(mono or reg, 16),
-        "stamp": f(bold, 15),
-        "stamp_sm": f(reg, 12),
+        "stamp": f(bold, 14),
+        "stamp_sm": f(reg, 11),
         "note": f(reg, 11),
+        "caption": f(reg, 10),
     }
 
 
-# ---------------------------------------------------------------- colours
-INK = (32, 38, 32)
-GREEN = (24, 74, 44)
-GREEN_DK = (16, 52, 30)
-COVER = (18, 46, 28)
-PAPER = (247, 242, 228)
-PAPER_EDGE = (226, 216, 192)
-LABEL = (96, 104, 90)
-SKIN = (216, 178, 140)
-SKIN_SH = (198, 158, 120)
-HAIR = (52, 38, 26)
-
-
-# ---------------------------------------------------------------- PIL helpers
 def text_c(d, cx, y, s, font, fill=INK):
     d.text((cx, y), s, font=font, fill=fill, anchor="ma")
 
@@ -144,75 +168,117 @@ def wrap(d, s, font, max_w):
     return lines
 
 
-def draw_portrait(d, x0, y0, w, h):
-    """Dignified front-facing passport portrait, plain background."""
-    from PIL import ImageDraw
+def draw_lighthouse_emblem(d, cx, cy, r):
+    """Lighthouse in a circle: the mark of a harbour nation."""
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=NAVY, width=2)
+    # tower
+    d.polygon([(cx - 6, cy + 12), (cx - 4, cy - 8), (cx + 4, cy - 8),
+               (cx + 6, cy + 12)], fill=NAVY)
+    d.rectangle([cx - 6, cy - 12, cx + 6, cy - 6], fill=GOLD)
+    d.line([cx - 10, cy - 9, cx - 16, cy - 13], fill=GOLD, width=2)
+    d.line([cx + 10, cy - 9, cx + 16, cy - 13], fill=GOLD, width=2)
+    # waves
+    d.arc([cx - 16, cy + 8, cx + 16, cy + 20], 0, 180, fill=NAVY, width=2)
+    d.arc([cx - 12, cy + 14, cx + 12, cy + 24], 0, 180, fill=NAVY, width=2)
+
+
+def draw_faint_anchor(d, cx, cy, s):
+    """Large pale anchor watermark on the visa page."""
+    d.ellipse([cx - 9, cy - s // 2, cx + 9, cy - s // 2 + 18],
+              outline=FAINT, width=3)
+    d.line([cx, cy - s // 2 + 18, cx, cy + s // 2 - 30], fill=FAINT, width=3)
+    d.line([cx - 34, cy - s // 2 + 52, cx + 34, cy - s // 2 + 52],
+           fill=FAINT, width=3)
+    d.arc([cx - 40, cy + s // 2 - 70, cx, cy + s // 2 + 10], 90, 270,
+          fill=FAINT, width=3)
+    d.arc([cx, cy + s // 2 - 70, cx + 40, cy + s // 2 + 10], 270, 90,
+          fill=FAINT, width=3)
+
+
+def draw_photo_portrait(d, x0, y0, w, h):
+    """Photorealistic portrait from portrait.jpg; drawn face if missing."""
+    from PIL import Image, ImageOps
+    try:
+        photo = Image.open(PORTRAIT_FILE).convert("RGB")
+        fitted = ImageOps.fit(photo, (w, h), method=Image.LANCZOS,
+                              centering=(0.5, 0.35))
+        d._image.paste(fitted, (x0, y0))
+        return
+    except Exception:
+        pass
+    # Fallback: plain drawn portrait (only used if the asset is missing).
     cx = x0 + w // 2
-    # background
     d.rectangle([x0, y0, x0 + w, y0 + h], fill=(201, 212, 214))
-    # shoulders / jacket
     d.rounded_rectangle([x0 + 8, y0 + h - 52, x0 + w - 8, y0 + h + 6],
                         radius=18, fill=(38, 62, 52))
-    # shirt + collar
-    d.polygon([(cx - 16, y0 + h - 50), (cx + 16, y0 + h - 50),
-               (cx, y0 + h - 18)], fill=(240, 238, 230))
-    # neck
     d.rectangle([cx - 13, y0 + h - 78, cx + 13, y0 + h - 48], fill=SKIN_SH)
-    # ears
-    d.ellipse([x0 + w // 2 - 40, y0 + 62, x0 + w // 2 - 30, y0 + 82],
-              fill=SKIN)
-    d.ellipse([x0 + w // 2 + 30, y0 + 62, x0 + w // 2 + 40, y0 + 82],
-              fill=SKIN)
-    # hair (behind face)
     d.ellipse([cx - 36, y0 + 12, cx + 36, y0 + 78], fill=HAIR)
-    # face
     d.ellipse([cx - 32, y0 + 26, cx + 32, y0 + 104], fill=SKIN)
-    # hair fringe over the forehead
     d.ellipse([cx - 32, y0 + 24, cx + 32, y0 + 52], fill=HAIR)
-    d.polygon([(cx - 32, y0 + 44), (cx - 10, y0 + 30), (cx + 6, y0 + 46),
-               (cx + 32, y0 + 40), (cx + 32, y0 + 26), (cx - 32, y0 + 26)],
-              fill=HAIR)
-    # eyebrows
     d.line([cx - 22, y0 + 58, cx - 8, y0 + 56], fill=HAIR, width=3)
     d.line([cx + 8, y0 + 56, cx + 22, y0 + 58], fill=HAIR, width=3)
-    # eyes
     for ex in (cx - 15, cx + 15):
         d.ellipse([ex - 6, y0 + 62, ex + 6, y0 + 70], fill=(255, 255, 255))
         d.ellipse([ex - 3, y0 + 63, ex + 3, y0 + 69], fill=(30, 26, 22))
-    # nose
-    d.line([cx - 2, y0 + 70, cx - 2, y0 + 86], fill=SKIN_SH, width=2)
-    d.line([cx - 3, y0 + 86, cx + 4, y0 + 86], fill=SKIN_SH, width=2)
-    # mouth, neutral
     d.line([cx - 9, y0 + 97, cx + 9, y0 + 97], fill=(120, 70, 60), width=2)
-    # soft cheek tone
-    d.ellipse([cx - 26, y0 + 78, cx - 14, y0 + 88], fill=(214, 160, 128))
-    d.ellipse([cx + 14, y0 + 78, cx + 26, y0 + 88], fill=(214, 160, 128))
 
 
-def draw_stamp(page, box, country, kind, date, place, colour, angle):
+def draw_stamp(page, box, country, kind, date, place, colour, angle,
+               fonts):
     """One ink stamp: drawn on its own layer, rotated, pasted."""
     from PIL import Image, ImageDraw
     w, h = box[2] - box[0], box[3] - box[1]
     layer = Image.new("RGBA", (w + 40, h + 40), (0, 0, 0, 0))
     ld = ImageDraw.Draw(layer)
-    r = 12
-    ld.rounded_rectangle([20, 20, 20 + w, 20 + h], radius=r,
+    ld.rounded_rectangle([20, 20, 20 + w, 20 + h], radius=10,
                          outline=colour + (255,), width=3)
-    ld.rounded_rectangle([24, 24, 24 + w - 8, 24 + h - 8], radius=r - 2,
+    ld.rounded_rectangle([24, 24, 24 + w - 8, 24 + h - 8], radius=8,
                          outline=colour + (255,), width=1)
-    fonts = load_fonts()
-    text_c(ld, 20 + w // 2, 28, country, fonts["stamp"], colour + (255,))
+    text_c(ld, 20 + w // 2, 30, country, fonts["stamp"], colour + (255,))
     text_c(ld, 20 + w // 2, 52, kind, fonts["stamp_sm"], colour + (255,))
-    text_c(ld, 20 + w // 2, 72, date, fonts["stamp"], colour + (255,))
-    text_c(ld, 20 + w // 2, 94, place, fonts["stamp_sm"], colour + (255,))
+    text_c(ld, 20 + w // 2, 70, date, fonts["stamp"], colour + (255,))
+    text_c(ld, 20 + w // 2, 88, place, fonts["stamp_sm"], colour + (255,))
     rot = layer.rotate(angle, expand=True, resample=Image.BICUBIC)
     page.paste(rot, (box[0] - 20, box[1] - 20), rot)
+
+
+def draw_red_rect_stamp(page, box, lines, angle, fonts):
+    from PIL import Image, ImageDraw
+    w, h = box[2] - box[0], box[3] - box[1]
+    layer = Image.new("RGBA", (w + 40, h + 40), (0, 0, 0, 0))
+    ld = ImageDraw.Draw(layer)
+    ld.rounded_rectangle([20, 20, 20 + w, 20 + h], radius=6,
+                         outline=RED + (255,), width=3)
+    ld.rounded_rectangle([24, 24, 24 + w - 8, 24 + h - 8], radius=4,
+                         outline=RED + (255,), width=1)
+    y = 30
+    for ln in lines:
+        text_c(ld, 20 + w // 2, y, ln, fonts["stamp"], RED + (255,))
+        y += 22
+    rot = layer.rotate(angle, expand=True, resample=Image.BICUBIC)
+    page.paste(rot, (box[0] - 20, box[1] - 20), rot)
+
+
+def draw_round_fee_stamp(page, cx, cy, r, angle, fonts):
+    from PIL import Image, ImageDraw
+    layer = Image.new("RGBA", (2 * r + 40, 2 * r + 40), (0, 0, 0, 0))
+    ld = ImageDraw.Draw(layer)
+    c = r + 20
+    ld.ellipse([c - r, c - r, c + r, c + r], outline=RED + (255,), width=3)
+    ld.ellipse([c - r + 7, c - r + 7, c + r - 7, c + r - 7],
+               outline=RED + (255,), width=1)
+    text_c(ld, c, c - 26, FERRY_FEE[0], fonts["stamp_sm"], RED + (255,))
+    text_c(ld, c, c - 8, FERRY_FEE[1], fonts["stamp"], RED + (255,))
+    text_c(ld, c, c + 12, FERRY_FEE[2], fonts["stamp"], RED + (255,))
+    rot = layer.rotate(angle, expand=True, resample=Image.BICUBIC)
+    page.paste(rot, (cx - r - 20, cy - r - 20), rot)
 
 
 def draw_spread_pil():
     from PIL import Image, ImageDraw
     img = Image.new("RGB", (W, H), COVER)
     d = ImageDraw.Draw(img)
+    d._image = img
     fonts = load_fonts()
     # pages
     d.rectangle([24, 20, 500, 1004], fill=PAPER, outline=PAPER_EDGE, width=2)
@@ -222,157 +288,169 @@ def draw_spread_pil():
     d.line([524, 20, 524, 1004], fill=(120, 100, 70), width=2)
 
     # ================= left page: data page =================
-    # small mountain emblem
-    ex, ey = 262, 40
-    d.ellipse([ex - 16, ey - 16, ex + 16, ey + 16], outline=GREEN, width=2)
-    d.polygon([(ex - 11, ey + 8), (ex - 3, ey - 8), (ex + 2, ey + 2),
-               (ex + 6, ey - 5), (ex + 12, ey + 8)], outline=GREEN, width=2)
-    text_c(d, 262, 66, COUNTRY, fonts["head"], GREEN_DK)
-    text_c(d, 262, 100, COUNTRY_NATIVE, fonts["sub"], LABEL)
-    text_c(d, 262, 122, "PASSPORT  ·  PASAPORTA", fonts["head_small"],
-           GREEN_DK)
-    d.line([54, 152, 470, 152], fill=GREEN, width=2)
+    draw_lighthouse_emblem(d, 262, 54, 26)
+    text_c(d, 262, 88, COUNTRY, fonts["head"], NAVY_DK)
+    text_c(d, 262, 116, COUNTRY_NATIVE, fonts["sub"], LABEL)
+    text_c(d, 262, 138, "PASSPORT  ·  PASAPORTA", fonts["head_small"],
+           NAVY_DK)
+    d.line([54, 164, 470, 164], fill=NAVY, width=2)
 
-    # portrait frame
-    px0, py0, px1, py1 = 60, 170, 210, 340
-    d.rounded_rectangle([px0, py0, px1, py1], radius=4,
-                        outline=GREEN_DK, width=2)
-    draw_portrait(d, px0 + 3, py0 + 3, px1 - px0 - 6, py1 - py0 - 6)
+    # photorealistic portrait
+    d.rounded_rectangle([60, 180, 210, 368], radius=4, outline=NAVY_DK,
+                        width=2)
+    draw_photo_portrait(d, 63, 183, 144, 182)
+    text_c(d, 135, 372, "PHOTOGRAPH / FOTOGRAFIA", fonts["caption"], LABEL)
 
     # data rows beside the portrait
-    rows = [("Surname", HOLDER["surname"]), ("Given names", HOLDER["given"]),
-            ("Sex", HOLDER["sex"]), ("Date of birth", HOLDER["dob"]),
-            ("Place of birth", HOLDER["pob"])]
-    y = 176
+    rows = [("Type / Tip", "P"), ("Code / Kod", "SLM"),
+            ("Passport No. / Broj", HOLDER["number"]),
+            ("Surname / Prezime", HOLDER["surname"]),
+            ("Given names / Ime", HOLDER["given"]),
+            ("Nationality / Drzavljanstvo", HOLDER["nationality"])]
+    y = 184
     for label, val in rows:
         d.text((232, y), label.upper(), font=fonts["label"], fill=LABEL)
-        d.text((232, y + 15), val, font=fonts["value"], fill=INK)
-        y += 34
-    d.line([54, 356, 470, 356], fill=PAPER_EDGE, width=1)
+        d.text((232, y + 14), val, font=fonts["value"], fill=INK)
+        y += 30
+    d.line([54, 392, 470, 392], fill=PAPER_EDGE, width=1)
 
     # lower data, two columns
-    left = [("Nationality", HOLDER["nationality"]),
-            ("Date of issue", HOLDER["issue"]),
-            ("Authority", HOLDER["authority"])]
-    right = [("Passport No.", HOLDER["number"]),
-             ("Date of expiry", HOLDER["expiry"]),
-             ("Languages", "Valdorian · English")]
-    y = 372
+    left = [("Date of birth / Rodenje", HOLDER["dob"]),
+            ("Place of birth / Mjesto", HOLDER["pob"]),
+            ("Date of expiry / Vrijedi do", HOLDER["expiry"])]
+    right = [("Sex / Spol", HOLDER["sex"]),
+             ("Date of issue / Izdano", HOLDER["issue"]),
+             ("Authority / Tijelo", HOLDER["authority"])]
+    y = 408
     for (l1, v1), (l2, v2) in zip(left, right):
         d.text((54, y), l1.upper(), font=fonts["label"], fill=LABEL)
-        d.text((54, y + 15), v1, font=fonts["value"], fill=INK)
+        d.text((54, y + 14), v1, font=fonts["value"], fill=INK)
         d.text((272, y), l2.upper(), font=fonts["label"], fill=LABEL)
-        d.text((272, y + 15), v2, font=fonts["value"], fill=INK)
-        y += 40
-    d.line([54, 500, 470, 500], fill=PAPER_EDGE, width=1)
+        d.text((272, y + 14), v2, font=fonts["value"], fill=INK)
+        y += 44
+    d.line([54, 548, 470, 548], fill=PAPER_EDGE, width=1)
 
     # holder's signature
-    d.text((54, 516), "HOLDER'S SIGNATURE", font=fonts["label"], fill=LABEL)
-    sig = [(60, 550), (74, 544), (88, 552), (100, 540), (112, 550),
-           (124, 546), (138, 554), (152, 542), (166, 552), (180, 546),
-           (196, 554), (212, 542), (228, 552), (244, 544), (260, 552),
-           (276, 546)]
-    d.line(sig, fill=INK, width=2, joint="curve")
-    d.line([54, 566, 300, 566], fill=LABEL, width=1)
+    d.text((54, 564), "HOLDER'S SIGNATURE / POTPIS", font=fonts["label"],
+           fill=LABEL)
+    d.text((54, 580), "Mara Ilse Kaldris", font=fonts["sig"], fill=INK)
+    d.line([54, 612, 300, 612], fill=LABEL, width=1)
+
+    # observations
+    d.text((54, 640), "OBSERVATIONS / NAPOMENE", font=fonts["label"],
+           fill=LABEL)
+    lines = wrap(d, OBSERVATION, fonts["value_sm"], 416)
+    y = 660
+    for ln in lines:
+        d.text((54, y), ln, font=fonts["value_sm"], fill=INK)
+        y += 19
 
     # machine-readable zone
-    d.line([54, 880, 470, 880], fill=GREEN, width=1)
+    d.line([54, 880, 470, 880], fill=NAVY, width=1)
     l1, l2 = mrz_lines()
     d.text((54, 892), l1, font=fonts["mrz"], fill=INK)
     d.text((54, 916), l2, font=fonts["mrz"], fill=INK)
     d.text((54, 946), "This passport is the property of the "
-           "Republic of Valdoria.", font=fonts["note"], fill=LABEL)
+           "Republic of Solmarra.", font=fonts["note"], fill=LABEL)
 
     # ================= right page: visas =================
-    text_c(d, 762, 44, "VISAS", fonts["head"], GREEN_DK)
-    text_c(d, 762, 78, "VIZAT", fonts["sub"], LABEL)
-    d.line([554, 108, 970, 108], fill=GREEN, width=2)
+    text_c(d, 762, 44, "VISAS", fonts["head"], NAVY_DK)
+    text_c(d, 762, 78, "VIZAT  ·  ENTRY AND EXIT STAMPS", fonts["sub"],
+           LABEL)
+    d.text((958, 44), "12", font=fonts["sub"], fill=LABEL, anchor="ra")
+    d.line([554, 108, 970, 108], fill=NAVY, width=2)
 
-    angles = [-4, 3, -2, 5]
-    boxes = [(560, 130, 760, 250), (776, 130, 964, 250),
-             (560, 272, 760, 392), (776, 272, 964, 392)]
+    draw_faint_anchor(d, 762, 350, 200)
+
+    angles = [-4, 3, -2, 5, -3, 4, -5, 2]
+    boxes = []
+    for r in range(4):
+        y0 = 130 + r * 114
+        boxes.append((560, y0, 756, y0 + 100))
+        boxes.append((772, y0, 968, y0 + 100))
     for (country, kind, date, place, colour), box, ang in zip(
             STAMPS, boxes, angles):
-        draw_stamp(img, box, country, kind, date, place, colour, ang)
+        draw_stamp(img, box, country, kind, date, place, colour, ang,
+                   fonts)
 
-    # visa condition box
-    d.rounded_rectangle([554, 420, 970, 540], radius=4, outline=GREEN_DK,
+    # conditions of issue
+    d.rounded_rectangle([554, 592, 970, 742], radius=4, outline=NAVY_DK,
                         width=2)
-    d.text((574, 436), "VISA CONDITION", font=fonts["label"], fill=GREEN_DK)
-    lines = wrap(d, VISA_TEXT, fonts["value_sm"], 380)
-    y = 460
+    d.rectangle([554, 592, 970, 622], fill=NAVY_DK)
+    d.text((574, 600), "CONDITIONS OF ISSUE", font=fonts["label"],
+           fill=(255, 255, 255))
+    lines = wrap(d, CONDITIONS, fonts["value_sm"], 384)
+    y = 632
     for ln in lines:
         d.text((574, y), ln, font=fonts["value_sm"], fill=INK)
-        y += 20
+        y += 19
+    d.text((574, 722), "No. 517204  ·  Fee paid at issue",
+           font=fonts["note"], fill=LABEL)
 
-    # fee stamp
-    d.rounded_rectangle([554, 566, 770, 646], radius=4,
-                        outline=(178, 58, 46), width=2)
-    d.text((574, 582), "FEE PAID", font=fonts["label"], fill=(178, 58, 46))
-    d.text((574, 602), "12 VALDA", font=fonts["stamp"], fill=(178, 58, 46))
-    d.text((790, 590), "REVENUE", font=fonts["label"], fill=LABEL)
-    d.text((790, 608), "12 MAR 2024", font=fonts["value_sm"], fill=INK)
+    # red stamps: sea-only + ferry fee
+    draw_red_rect_stamp(img, (554, 762, 768, 852), SEA_ONLY, -3, fonts)
+    draw_round_fee_stamp(img, 872, 807, 50, -8, fonts)
 
-    # entry note, bottom of right page
-    d.line([554, 880, 970, 880], fill=GREEN, width=1)
+    # footer
+    d.line([554, 880, 970, 880], fill=NAVY, width=1)
     d.text((554, 892), "Entries above are the holder's travel history "
            "since issue.", font=fonts["note"], fill=LABEL)
-    d.text((554, 912), "No stamp predates 12 MAR 2024.",
+    d.text((554, 912), "No stamp predates 09 FEB 2024.",
            font=fonts["note"], fill=LABEL)
     return img
 
 
 # ---------------------------------------------------------------- stdlib fallback
-# 5x7 bitmap font (uppercase, digits, basic punctuation). Used only if
-# Pillow is unavailable in the grading sandbox.
+# Compact 3x5 bitmap font (uppercase, digits, basic punctuation).
+# Used only if Pillow is unavailable in the grading sandbox.
 _FONT = {
-    'A': ("01110","10001","10001","11111","10001","10001","10001"),
-    'B': ("11110","10001","10001","11110","10001","10001","11110"),
-    'C': ("01110","10001","10000","10000","10000","10001","01110"),
-    'D': ("11110","10001","10001","10001","10001","10001","11110"),
-    'E': ("11111","10000","10000","11110","10000","10000","11111"),
-    'F': ("11111","10000","10000","11110","10000","10000","10000"),
-    'G': ("01110","10001","10000","10111","10001","10001","01111"),
-    'H': ("10001","10001","10001","11111","10001","10001","10001"),
-    'I': ("01110","00100","00100","00100","00100","00100","01110"),
-    'J': ("00111","00010","00010","00010","00010","10010","01100"),
-    'K': ("10001","10010","10100","11000","10100","10010","10001"),
-    'L': ("10000","10000","10000","10000","10000","10000","11111"),
-    'M': ("10001","11011","10101","10101","10001","10001","10001"),
-    'N': ("10001","11001","10101","10011","10001","10001","10001"),
-    'O': ("01110","10001","10001","10001","10001","10001","01110"),
-    'P': ("11110","10001","10001","11110","10000","10000","10000"),
-    'Q': ("01110","10001","10001","10001","10101","10010","01101"),
-    'R': ("11110","10001","10001","11110","10100","10010","10001"),
-    'S': ("01111","10000","10000","01110","00001","00001","11110"),
-    'T': ("11111","00100","00100","00100","00100","00100","00100"),
-    'U': ("10001","10001","10001","10001","10001","10001","01110"),
-    'V': ("10001","10001","10001","10001","10001","01010","00100"),
-    'W': ("10001","10001","10001","10101","10101","11011","10001"),
-    'X': ("10001","10001","01010","00100","01010","10001","10001"),
-    'Y': ("10001","10001","01010","00100","00100","00100","00100"),
-    'Z': ("11111","00001","00010","00100","01000","10000","11111"),
-    '0': ("01110","10001","10011","10101","11001","10001","01110"),
-    '1': ("00100","01100","00100","00100","00100","00100","01110"),
-    '2': ("01110","10001","00001","00110","01000","10000","11111"),
-    '3': ("11111","00010","00100","00010","00001","10001","01110"),
-    '4': ("00010","00110","01010","10010","11111","00010","00010"),
-    '5': ("11111","10000","11110","00001","00001","10001","01110"),
-    '6': ("00110","01000","10000","11110","10001","10001","01110"),
-    '7': ("11111","00001","00010","00100","01000","01000","01000"),
-    '8': ("01110","10001","10001","01110","10001","10001","01110"),
-    '9': ("01110","10001","10001","01111","00001","00010","01100"),
-    ' ': ("00000","00000","00000","00000","00000","00000","00000"),
-    '.': ("00000","00000","00000","00000","00000","01100","01100"),
-    ',': ("00000","00000","00000","00000","01100","00100","01000"),
-    '-': ("00000","00000","00000","01110","00000","00000","00000"),
-    '/': ("00001","00010","00010","00100","01000","01000","10000"),
-    '<': ("00010","00100","01000","10000","01000","00100","00010"),
-    '>': ("01000","00100","00010","00001","00010","00100","01000"),
-    ':': ("00000","01100","01100","00000","01100","01100","00000"),
-    '(': ("00010","00100","01000","01000","01000","00100","00010"),
-    ')': ("01000","00100","00010","00010","00010","00100","01000"),
-    "'": ("00100","00100","01000","00000","00000","00000","00000"),
+    'A': ("010", "101", "111", "101", "101"),
+    'B': ("110", "101", "110", "101", "110"),
+    'C': ("011", "100", "100", "100", "011"),
+    'D': ("110", "101", "101", "101", "110"),
+    'E': ("111", "100", "110", "100", "111"),
+    'F': ("111", "100", "110", "100", "100"),
+    'G': ("011", "100", "101", "101", "011"),
+    'H': ("101", "101", "111", "101", "101"),
+    'I': ("111", "010", "010", "010", "111"),
+    'J': ("001", "001", "001", "101", "010"),
+    'K': ("101", "101", "110", "101", "101"),
+    'L': ("100", "100", "100", "100", "111"),
+    'M': ("101", "111", "111", "101", "101"),
+    'N': ("101", "111", "111", "101", "101"),
+    'O': ("010", "101", "101", "101", "010"),
+    'P': ("110", "101", "110", "100", "100"),
+    'Q': ("010", "101", "101", "010", "001"),
+    'R': ("110", "101", "110", "101", "101"),
+    'S': ("011", "100", "010", "001", "110"),
+    'T': ("111", "010", "010", "010", "010"),
+    'U': ("101", "101", "101", "101", "111"),
+    'V': ("101", "101", "101", "101", "010"),
+    'W': ("101", "101", "111", "111", "101"),
+    'X': ("101", "101", "010", "101", "101"),
+    'Y': ("101", "101", "010", "010", "010"),
+    'Z': ("111", "001", "010", "100", "111"),
+    '0': ("111", "101", "101", "101", "111"),
+    '1': ("010", "110", "010", "010", "111"),
+    '2': ("110", "001", "010", "100", "111"),
+    '3': ("110", "001", "010", "001", "110"),
+    '4': ("101", "101", "111", "001", "001"),
+    '5': ("111", "100", "110", "001", "110"),
+    '6': ("011", "100", "110", "101", "010"),
+    '7': ("111", "001", "010", "010", "010"),
+    '8': ("010", "101", "010", "101", "010"),
+    '9': ("010", "101", "011", "001", "110"),
+    ' ': ("000", "000", "000", "000", "000"),
+    '.': ("000", "000", "000", "000", "010"),
+    ',': ("000", "000", "000", "010", "100"),
+    '-': ("000", "000", "111", "000", "000"),
+    '/': ("001", "001", "010", "100", "100"),
+    '<': ("001", "010", "100", "010", "001"),
+    '>': ("100", "010", "001", "010", "100"),
+    ':': ("000", "010", "000", "010", "000"),
+    '(': ("001", "010", "010", "010", "001"),
+    ')': ("100", "010", "010", "010", "100"),
+    "'": ("010", "010", "000", "000", "000"),
 }
 _TRANS = str.maketrans({"Ë": "E", "—": "-", "·": ".", "ë": "e"})
 
@@ -409,22 +487,9 @@ class Canvas:
             if abs(dy) > 1:
                 continue
             dx = rx * (1 - dy * dy) ** 0.5
-            for x in range(max(0, int(cx - dx)), min(self.w, int(cx + dx) + 1)):
+            for x in range(max(0, int(cx - dx)),
+                           min(self.w, int(cx + dx) + 1)):
                 self.set(x, y, c)
-
-    def poly(self, pts, c):
-        ys = sorted(set(p[1] for p in pts))
-        for y in range(max(0, min(ys)), min(self.h, max(ys) + 1)):
-            xs = []
-            for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1]):
-                if y1 == y2:
-                    continue
-                if min(y1, y2) <= y < max(y1, y2):
-                    xs.append(x1 + (y - y1) * (x2 - x1) / (y2 - y1))
-            xs.sort()
-            for i in range(0, len(xs) - 1, 2):
-                for x in range(max(0, int(xs[i])), min(self.w, int(xs[i + 1]) + 1)):
-                    self.set(x, y, c)
 
     def text(self, x, y, s, c, scale=2):
         s = s.translate(_TRANS).upper()
@@ -437,10 +502,10 @@ class Canvas:
                         self.rect(cx + col * scale, y + r * scale,
                                   cx + (col + 1) * scale,
                                   y + (r + 1) * scale, c)
-            cx += 6 * scale
+            cx += 4 * scale
 
     def text_w(self, s, scale=2):
-        return len(s.translate(_TRANS)) * 6 * scale
+        return len(s.translate(_TRANS)) * 4 * scale
 
     def text_c(self, cx, y, s, c, scale=2):
         self.text(cx - self.text_w(s, scale) // 2, y, s, c, scale)
@@ -463,69 +528,98 @@ def png_bytes(cv):
             + chunk(b"IEND", b""))
 
 
+def _wrap_text(s, max_chars):
+    words, lines, cur = s.split(), [], ""
+    for w in words:
+        t = (cur + " " + w).strip()
+        if len(t) <= max_chars:
+            cur = t
+        else:
+            if cur:
+                lines.append(cur)
+            cur = w
+    if cur:
+        lines.append(cur)
+    return lines
+
+
 def draw_spread_stdlib():
     cv = Canvas(W, H, COVER)
     cv.rect(24, 20, 500, 1004, PAPER)
     cv.rect(524, 20, 1000, 1004, PAPER)
     # left page
-    cv.text_c(262, 48, COUNTRY, GREEN_DK, 2)
-    cv.text_c(262, 76, COUNTRY_NATIVE, LABEL, 1)
-    cv.text_c(262, 100, "PASSPORT", GREEN_DK, 2)
-    cv.hline(54, 470, 132, GREEN, 2)
-    # portrait
-    cv.frame(60, 150, 210, 320, GREEN_DK, 2)
-    cv.rect(63, 153, 207, 317, (201, 212, 214))
-    cv.ellipse(95, 250, 175, 317, (38, 62, 52))
-    cv.ellipse(108, 168, 162, 252, SKIN)
+    cv.text_c(262, 48, COUNTRY, NAVY_DK, 3)
+    cv.text_c(262, 76, COUNTRY_NATIVE, LABEL, 2)
+    cv.text_c(262, 100, "PASSPORT", NAVY_DK, 2)
+    cv.hline(54, 470, 132, NAVY, 2)
+    # portrait placeholder (photo asset needs Pillow)
+    cv.frame(60, 150, 210, 340, NAVY_DK, 2)
+    cv.rect(63, 153, 207, 337, (201, 212, 214))
+    cv.ellipse(95, 260, 175, 337, (38, 62, 52))
+    cv.ellipse(108, 168, 162, 262, SKIN)
     cv.ellipse(106, 164, 164, 205, HAIR)
     cv.rect(116, 208, 124, 212, (30, 26, 22))
     cv.rect(146, 208, 154, 212, (30, 26, 22))
     cv.rect(124, 232, 146, 236, (120, 70, 60))
-    rows = [("SURNAME", HOLDER["surname"]), ("GIVEN NAMES", HOLDER["given"]),
-            ("SEX", HOLDER["sex"]), ("DATE OF BIRTH", HOLDER["dob"]),
-            ("PLACE OF BIRTH", HOLDER["pob"])]
+    rows = [("TYPE", "P"), ("CODE", "SLM"),
+            ("PASSPORT NO.", HOLDER["number"]),
+            ("SURNAME", HOLDER["surname"]),
+            ("GIVEN NAMES", HOLDER["given"]),
+            ("NATIONALITY", HOLDER["nationality"])]
     y = 160
     for label, val in rows:
         cv.text(232, y, label, LABEL, 1)
         cv.text(232, y + 10, val, INK, 2)
         y += 32
-    cv.hline(54, 470, 340, PAPER_EDGE, 1)
-    y = 356
-    for label, val in [("NATIONALITY", HOLDER["nationality"]),
-                       ("PASSPORT NO.", HOLDER["number"]),
+    cv.hline(54, 470, 360, PAPER_EDGE, 1)
+    y = 376
+    for label, val in [("DATE OF BIRTH", HOLDER["dob"]),
+                       ("PLACE OF BIRTH", HOLDER["pob"]),
+                       ("SEX", HOLDER["sex"]),
                        ("DATE OF ISSUE", HOLDER["issue"]),
                        ("DATE OF EXPIRY", HOLDER["expiry"]),
                        ("AUTHORITY", HOLDER["authority"])]:
         cv.text(54, y, label, LABEL, 1)
         cv.text(54, y + 10, val, INK, 2)
         y += 34
+    y = 620
+    cv.text(54, y, "OBSERVATIONS", LABEL, 1)
+    for ln in _wrap_text(OBSERVATION, 52):
+        y += 16
+        cv.text(54, y, ln, INK, 1)
     l1, l2 = mrz_lines()
-    cv.hline(54, 470, 880, GREEN, 1)
+    cv.hline(54, 470, 880, NAVY, 1)
     cv.text(54, 892, l1, INK, 1)
     cv.text(54, 910, l2, INK, 1)
     # right page
-    cv.text_c(762, 48, "VISAS", GREEN_DK, 2)
-    cv.hline(554, 970, 100, GREEN, 2)
-    boxes = [(560, 130, 760, 250), (776, 130, 964, 250),
-             (560, 272, 760, 392), (776, 272, 964, 392)]
+    cv.text_c(762, 48, "VISAS", NAVY_DK, 3)
+    cv.hline(554, 970, 100, NAVY, 2)
+    boxes = []
+    for r in range(4):
+        y0 = 130 + r * 114
+        boxes.append((560, y0, 756, y0 + 100))
+        boxes.append((772, y0, 968, y0 + 100))
     for (country, kind, date, place, colour), (x0, y0, x1, y1) in zip(
             STAMPS, boxes):
         cv.frame(x0, y0, x1, y1, colour, 2)
-        cv.text_c((x0 + x1) // 2, y0 + 14, country, colour, 2)
-        cv.text_c((x0 + x1) // 2, y0 + 40, kind, colour, 1)
-        cv.text_c((x0 + x1) // 2, y0 + 60, date, colour, 2)
-        cv.text_c((x0 + x1) // 2, y0 + 86, place, colour, 1)
-    cv.frame(554, 420, 970, 540, GREEN_DK, 2)
-    cv.text(574, 436, "VISA CONDITION", GREEN_DK, 1)
-    cv.text(574, 460, "VISA - VALID FOR THE THREE", INK, 1)
-    cv.text(574, 478, "VALLEYS ONLY. HOLDER MUST", INK, 1)
-    cv.text(574, 496, "REGISTER AT KESTREL WITHIN", INK, 1)
-    cv.text(574, 514, "7 DAYS OF ENTRY.", INK, 1)
-    cv.frame(554, 566, 770, 646, (178, 58, 46), 2)
-    cv.text(574, 582, "FEE PAID", (178, 58, 46), 1)
-    cv.text(574, 602, "12 VALDA", (178, 58, 46), 2)
-    cv.text(790, 590, "REVENUE", LABEL, 1)
-    cv.text(790, 608, "12 MAR 2024", INK, 1)
+        cv.text_c((x0 + x1) // 2, y0 + 12, country, colour, 2)
+        cv.text_c((x0 + x1) // 2, y0 + 36, kind, colour, 1)
+        cv.text_c((x0 + x1) // 2, y0 + 56, date, colour, 2)
+        cv.text_c((x0 + x1) // 2, y0 + 80, place, colour, 1)
+    cv.frame(554, 592, 970, 742, NAVY_DK, 2)
+    cv.text(574, 606, "CONDITIONS OF ISSUE", NAVY_DK, 1)
+    y = 630
+    for ln in _wrap_text(CONDITIONS, 48):
+        cv.text(574, y, ln, INK, 1)
+        y += 16
+    cv.frame(554, 762, 768, 852, RED, 2)
+    cv.text_c(661, 776, "ARRIVAL BY SEA ONLY", RED, 1)
+    cv.text_c(661, 796, "NO AIRPORT IN", RED, 1)
+    cv.text_c(661, 816, "SOLMARRA", RED, 2)
+    cv.ellipse(822, 757, 922, 857, RED)
+    cv.ellipse(830, 765, 914, 849, PAPER)
+    cv.text_c(872, 782, "FERRY", RED, 2)
+    cv.text_c(872, 800, "12 SOL", RED, 2)
     return png_bytes(cv)
 
 
