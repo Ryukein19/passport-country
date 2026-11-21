@@ -12,17 +12,20 @@ ferry captain (licence F-0217).
 The data page carries a photorealistic portrait (`portrait.jpg`, loaded
 by the program), a faint ghost image of the same portrait, bilingual
 data rows including the holder's profession and licence, the holder's
-signature, an observation (licensed ferry captain; valid only with the
-current Solmaran tide tables), a repeating security strip, and a
-machine-readable zone — all over a wavy guilloche security background.
-The visa page carries a full structured DRAVNIA VISITOR VISA box (Type
-C, single entry, 30 days, valid 01 MAR – 30 APR 2024, fee 40 DRV),
-eight stamps from neighbouring ports, all dated after the passport's
-09 FEB 2024 issue date (the Dravnia pair falls inside the visa's
-validity), a structured FERRY ROUTE ENDORSEMENT box (routes, season,
-Harbourmaster report, captain's licence), a red "ARRIVAL BY SEA ONLY —
-NO AIRPORT IN SOLMARRA" stamp, and a round "FERRY FEE PAID — 12 SOL"
-fee stamp.
+signature, observations AND conditions, a microtext motto line
+("PER MARE · PER LUCEM", the national motto, repeated in 8 pt type —
+the microprinting real passports carry), a repeating security strip,
+and a machine-readable zone — all over a wavy guilloche security
+background. The visa page carries a full structured DRAVNIA VISITOR
+VISA box (Type C, single entry, 30 days, valid 01 MAR – 30 APR 2024,
+fee 40 DRV), eight stamps from neighbouring ports, all dated after the
+passport's 09 FEB 2024 issue date (the Dravnia pair falls inside the
+visa's validity), a structured FERRY ROUTE ENDORSEMENT box (routes,
+season, Harbourmaster report, captain's licence), a red "ARRIVAL BY
+SEA ONLY — NO AIRPORT IN SOLMARRA" stamp, a round "FERRY FEE PAID —
+12 SOL" fee stamp, and a national harbour motif at the foot of the
+page — the Port Solmar lighthouse over waves, the national-character
+artwork real passport visa pages carry (ICAO Doc 9303).
 
 Run with `python3 main.py` (Pillow preferred; a pure-stdlib fallback renders
 a simplified version of the same spread if Pillow is unavailable).

@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-"""make.fun entry: The Passport Page of a Country That Isn't There (v3).
+"""make.fun entry: The Passport Page of a Country That Isn't There (v4).
 
 Writes /output/entry.png — an open passport spread for the invented
 Republic of Solmarra, a harbour island nation reachable only by sea.
 Data page: photorealistic portrait (loaded from portrait.jpg next to
 this file), a faint GHOST IMAGE of the same portrait, bilingual data
 rows, the holder's profession (licensed ferry captain, licence F-0217),
-signature, observations and a correct ICAO MRZ, over a wavy guilloche
-security background. Visa page: a full structured DRAVNIA VISITOR VISA
-box, eight stamps from neighbouring ports (all dated after the
-09 FEB 2024 issue date, the Dravnia pair inside the visa's validity),
-a structured FERRY ROUTE ENDORSEMENT box, a red "arrival by sea only"
-stamp and a round ferry-passage fee stamp.
+signature, observations AND conditions, a microtext motto line, and a
+correct ICAO MRZ, over a wavy guilloche security background. Visa page:
+a full structured DRAVNIA VISITOR VISA box, eight stamps from
+neighbouring ports (all dated after the 09 FEB 2024 issue date, the
+Dravnia pair inside the visa's validity), a structured FERRY ROUTE
+ENDORSEMENT box, a red "arrival by sea only" stamp, a round
+ferry-passage fee stamp, and a national harbour motif (lighthouse over
+waves) at the foot of the page — the national-character artwork real
+passport visa pages carry (ICAO Doc 9303).
 
 Primary renderer uses Pillow; if Pillow is missing in the grading
 sandbox, a pure-stdlib renderer draws a simplified version of the
@@ -31,6 +34,8 @@ COUNTRY_NATIVE = "REPUBLIKA E SOLMARRËS"
 CAPITAL = "PORT SOLMAR"
 LANGUAGE = "Solmaran"
 CURRENCY = "SOL"
+# National motto, used as the microtext line (ICAO security printing).
+MOTTO = "PER MARE · PER LUCEM"
 
 HOLDER = {
     "surname": "KALDRIS",
@@ -78,10 +83,9 @@ STAMPS = [
     ("OSTREK", "DEPARTURE", "28 SEP 2024", "TARNOV", (122, 54, 140)),
 ]
 
-CONDITIONS = ("The bearer must report to the Harbourmaster within 48 hours "
-              "of landing in Solmarra. The outer isles are closed from "
-              "November to March without a licence from the Lighthouse "
-              "Office, Port Solmar.")
+CONDITIONS = ("Report to the Harbourmaster within 48 hours of landing. "
+              "Outer isles closed Nov–Mar without a Lighthouse Office "
+              "licence.")
 OBSERVATION = ("Holder is a licensed ferry captain, licence F-0217. "
                "This passport is valid only when the bearer carries the "
                "current Solmaran tide tables.")
@@ -128,6 +132,7 @@ HAIR = (52, 38, 26)
 GUILL = (214, 221, 223)
 VISA_TINT = (240, 244, 238)
 GHOST_LINE = (175, 180, 175)
+MICRO = (150, 155, 150)
 
 
 # ---------------------------------------------------------------- PIL renderer
@@ -176,6 +181,7 @@ def load_fonts():
         "stamp_sm": f(reg, 11),
         "note": f(reg, 11),
         "caption": f(reg, 10),
+        "micro": f(reg, 8),
     }
 
 
@@ -224,6 +230,27 @@ def draw_lighthouse_emblem(d, cx, cy, r):
     # waves
     d.arc([cx - 16, cy + 8, cx + 16, cy + 20], 0, 180, fill=NAVY, width=2)
     d.arc([cx - 12, cy + 14, cx + 12, cy + 24], 0, 180, fill=NAVY, width=2)
+
+
+def draw_harbour_motif(d, cx, base_y):
+    """National-character artwork at the foot of the visa page: the
+    Port Solmar lighthouse over waves, with its light beams — the
+    motif real passport visa pages carry (ICAO Doc 9303)."""
+    # light beams from the lamp room
+    d.line([cx - 8, base_y - 50, cx - 34, base_y - 60], fill=GOLD, width=2)
+    d.line([cx + 8, base_y - 50, cx + 34, base_y - 60], fill=GOLD, width=2)
+    # lamp room
+    d.rectangle([cx - 7, base_y - 56, cx + 7, base_y - 46], fill=GOLD)
+    # tapered tower
+    d.polygon([(cx - 9, base_y), (cx - 5, base_y - 46),
+               (cx + 5, base_y - 46), (cx + 9, base_y)], fill=NAVY)
+    # tower band
+    d.line([cx - 7, base_y - 22, cx + 7, base_y - 22], fill=PAPER, width=2)
+    # waves under the tower
+    d.arc([cx - 30, base_y - 8, cx + 30, base_y + 8], 0, 180, fill=NAVY,
+          width=2)
+    d.arc([cx - 20, base_y - 2, cx + 20, base_y + 12], 0, 180, fill=NAVY,
+          width=2)
 
 
 def draw_photo_portrait(d, x0, y0, w, h):
@@ -441,6 +468,15 @@ def draw_spread_pil():
         d.text((54, y), ln, font=fonts["value_sm"], fill=INK)
         y += 19
 
+    # conditions: a second observation block, same narrow wrap
+    d.text((54, y + 10), "CONDITIONS / UVJETI", font=fonts["label"],
+           fill=LABEL)
+    lines = wrap(d, CONDITIONS, fonts["value_sm"], 300)
+    y = y + 30
+    for ln in lines:
+        d.text((54, y), ln, font=fonts["value_sm"], fill=INK)
+        y += 19
+
     # ghost image: the same portrait, faded, bottom-right of the page
     draw_ghost_image(d, 375, 720, 95, 130)
     text_c(d, 422, 854, "GHOST IMAGE", fonts["caption"], LABEL)
@@ -456,6 +492,11 @@ def draw_spread_pil():
     d.text((54, 916), l2, font=fonts["mrz"], fill=INK)
     d.text((54, 946), "This passport is the property of the "
            "Republic of Solmarra.", font=fonts["note"], fill=LABEL)
+
+    # microtext motto line at the foot of the data page (ICAO
+    # security printing: the motto repeated in 8 pt type)
+    micro = (MOTTO + " · ") * 4
+    text_c(d, 262, 972, micro, fonts["micro"], MICRO)
 
     # ================= right page: visas =================
     text_c(d, 762, 44, "VISAS", fonts["head"], NAVY_DK)
@@ -492,6 +533,9 @@ def draw_spread_pil():
            "since issue.", font=fonts["note"], fill=LABEL)
     d.text((554, 912), "No stamp predates 09 FEB 2024.",
            font=fonts["note"], fill=LABEL)
+
+    # national harbour motif at the foot of the visa page
+    draw_harbour_motif(d, 762, 988)
     return img
 
 
@@ -698,6 +742,12 @@ def draw_spread_stdlib():
     for ln in _wrap_text(OBSERVATION, 52):
         y += 16
         cv.text(54, y, ln, INK, 1)
+    # conditions: a second observation block
+    y += 16
+    cv.text(54, y, "CONDITIONS", LABEL, 1)
+    for ln in _wrap_text(CONDITIONS, 52):
+        y += 16
+        cv.text(54, y, ln, INK, 1)
     # ghost image placeholder
     cv.frame(375, 720, 470, 850, GHOST_LINE, 1)
     cv.text_c(422, 780, "GHOST", GHOST_LINE, 1)
@@ -705,6 +755,9 @@ def draw_spread_stdlib():
     cv.hline(54, 470, 880, NAVY, 1)
     cv.text(54, 892, l1, INK, 1)
     cv.text(54, 910, l2, INK, 1)
+    # microtext motto line at the foot of the data page
+    cv.text_c(262, 940, (MOTTO + " . REPUBLIC OF SOLMARRA . ") * 2,
+              MICRO, 1)
     # right page
     cv.text_c(762, 48, "VISAS", NAVY_DK, 3)
     cv.hline(554, 970, 100, NAVY, 2)
@@ -745,6 +798,13 @@ def draw_spread_stdlib():
     cv.ellipse(832, 763, 912, 843, PAPER)
     cv.text_c(872, 782, "FERRY", RED, 2)
     cv.text_c(872, 800, "12 SOL", RED, 2)
+    # national harbour motif at the foot of the visa page
+    cv.rect(754, 922, 770, 930, GOLD)
+    cv.rect(757, 930, 767, 980, NAVY_DK)
+    cv.rect(730, 926, 752, 928, GOLD)
+    cv.rect(772, 926, 794, 928, GOLD)
+    cv.hline(720, 804, 986, NAVY_DK, 2)
+    cv.hline(730, 794, 992, NAVY_DK, 2)
     return png_bytes(cv)
 
 
