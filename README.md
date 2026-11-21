@@ -6,14 +6,22 @@
 
 A program that writes one image to `/output/entry.png`: an open passport
 spread for the invented Republic of Solmarra — a harbour island nation
-reachable only by sea. The data page carries a photorealistic portrait
-(`portrait.jpg`, loaded by the program), bilingual data rows, the
-holder's signature, an observation about the Solmaran tide tables, and
-a machine-readable zone. The visa page carries eight stamps from
-neighbouring ports, all dated after the passport's 09 FEB 2024 issue
-date, a Conditions of Issue box (outer isles closed November–March
-without a Lighthouse Office licence), a red "ARRIVAL BY SEA ONLY — NO
-AIRPORT IN SOLMARRA" stamp, and a round "FERRY PASSAGE PAID — 12 SOL"
+reachable only by sea. The holder is Mara Ilse Kaldris, a licensed
+ferry captain (licence F-0217).
+
+The data page carries a photorealistic portrait (`portrait.jpg`, loaded
+by the program), a faint ghost image of the same portrait, bilingual
+data rows including the holder's profession and licence, the holder's
+signature, an observation (licensed ferry captain; valid only with the
+current Solmaran tide tables), a repeating security strip, and a
+machine-readable zone — all over a wavy guilloche security background.
+The visa page carries a full structured DRAVNIA VISITOR VISA box (Type
+C, single entry, 30 days, valid 01 MAR – 30 APR 2024, fee 40 DRV),
+eight stamps from neighbouring ports, all dated after the passport's
+09 FEB 2024 issue date (the Dravnia pair falls inside the visa's
+validity), a structured FERRY ROUTE ENDORSEMENT box (routes, season,
+Harbourmaster report, captain's licence), a red "ARRIVAL BY SEA ONLY —
+NO AIRPORT IN SOLMARRA" stamp, and a round "FERRY FEE PAID — 12 SOL"
 fee stamp.
 
 Run with `python3 main.py` (Pillow preferred; a pure-stdlib fallback renders

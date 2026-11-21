@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
-"""make.fun entry: The Passport Page of a Country That Isn't There (v2).
+"""make.fun entry: The Passport Page of a Country That Isn't There (v3).
 
 Writes /output/entry.png — an open passport spread for the invented
 Republic of Solmarra, a harbour island nation reachable only by sea.
 Data page: photorealistic portrait (loaded from portrait.jpg next to
-this file), bilingual data rows, signature, observations and a correct
-ICAO MRZ. Visa page: eight stamps from neighbouring ports, all dated
-after the 09 FEB 2024 issue date, a Conditions of Issue box, a red
-"arrival by sea only" stamp and a round ferry-passage fee stamp.
+this file), a faint GHOST IMAGE of the same portrait, bilingual data
+rows, the holder's profession (licensed ferry captain, licence F-0217),
+signature, observations and a correct ICAO MRZ, over a wavy guilloche
+security background. Visa page: a full structured DRAVNIA VISITOR VISA
+box, eight stamps from neighbouring ports (all dated after the
+09 FEB 2024 issue date, the Dravnia pair inside the visa's validity),
+a structured FERRY ROUTE ENDORSEMENT box, a red "arrival by sea only"
+stamp and a round ferry-passage fee stamp.
 
 Primary renderer uses Pillow; if Pillow is missing in the grading
 sandbox, a pure-stdlib renderer draws a simplified version of the
@@ -39,7 +43,28 @@ HOLDER = {
     "issue": "09 FEB 2024",
     "expiry": "09 FEB 2034",
     "authority": "HARBOUR OFFICE",
+    "profession": "FERRY CAPTAIN",
+    "licence": "F-0217",
 }
+
+# The Dravnia visa covers the holder's first trip (25 MAR - 08 APR 2024).
+VISA = {
+    "country": "DRAVNIA",
+    "native": "DRAVNI VIZA",
+    "type": "C · SINGLE ENTRY",
+    "stay": "30 DAYS",
+    "valid_from": "01 MAR 2024",
+    "until": "30 APR 2024",
+    "issued_at": "KESTREL PORT, 15 FEB 2024",
+    "fee": "40 DRV",
+}
+
+ENDORSEMENT = [
+    "ROUTES: PORT SOLMAR — KESTREL PORT · LUMEN CITY",
+    "SEASON: 1 APR — 31 OCT. WINTER: MAIL BOAT ONLY.",
+    "REPORT TO THE HARBOURMASTER WITHIN 48 HOURS.",
+    "VALID ONLY WITH CAPTAIN'S LICENCE F-0217.",
+]
 
 # Every stamp is dated AFTER the 09 FEB 2024 issue date, in travel order.
 STAMPS = [
@@ -57,10 +82,11 @@ CONDITIONS = ("The bearer must report to the Harbourmaster within 48 hours "
               "of landing in Solmarra. The outer isles are closed from "
               "November to March without a licence from the Lighthouse "
               "Office, Port Solmar.")
-OBSERVATION = ("This passport is valid only when the bearer carries the "
+OBSERVATION = ("Holder is a licensed ferry captain, licence F-0217. "
+               "This passport is valid only when the bearer carries the "
                "current Solmaran tide tables.")
 SEA_ONLY = ("ARRIVAL BY SEA ONLY", "NO AIRPORT IN", "SOLMARRA")
-FERRY_FEE = ("FERRY PASSAGE", "PAID", "12 SOL")
+FERRY_FEE = ("FERRY FEE", "PAID", "12 SOL")
 
 
 # ---------------------------------------------------------------- MRZ (ICAO 9303, TD3)
@@ -99,6 +125,9 @@ FAINT = (233, 226, 202)
 SKIN = (216, 178, 140)
 SKIN_SH = (198, 158, 120)
 HAIR = (52, 38, 26)
+GUILL = (214, 221, 223)
+VISA_TINT = (240, 244, 238)
+GHOST_LINE = (175, 180, 175)
 
 
 # ---------------------------------------------------------------- PIL renderer
@@ -140,6 +169,7 @@ def load_fonts():
         "label": f(bold, 11),
         "value": f(bold, 15),
         "value_sm": f(reg, 15),
+        "rule": f(reg, 13),
         "sig": f(serif_i or reg, 24),
         "mrz": f(mono or reg, 16),
         "stamp": f(bold, 14),
@@ -168,6 +198,20 @@ def wrap(d, s, font, max_w):
     return lines
 
 
+def draw_guilloche(d, x0, x1, y0, y1, colour=GUILL):
+    """Wavy security lines across a page, drawn before any content."""
+    import math
+    y = y0 + 6
+    while y < y1:
+        pts = []
+        x = x0
+        while x <= x1:
+            pts.append((x, y + 4 * math.sin((x - x0) * 2 * math.pi / 72)))
+            x += 5
+        d.line(pts, fill=colour, width=1)
+        y += 15
+
+
 def draw_lighthouse_emblem(d, cx, cy, r):
     """Lighthouse in a circle: the mark of a harbour nation."""
     d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=NAVY, width=2)
@@ -180,19 +224,6 @@ def draw_lighthouse_emblem(d, cx, cy, r):
     # waves
     d.arc([cx - 16, cy + 8, cx + 16, cy + 20], 0, 180, fill=NAVY, width=2)
     d.arc([cx - 12, cy + 14, cx + 12, cy + 24], 0, 180, fill=NAVY, width=2)
-
-
-def draw_faint_anchor(d, cx, cy, s):
-    """Large pale anchor watermark on the visa page."""
-    d.ellipse([cx - 9, cy - s // 2, cx + 9, cy - s // 2 + 18],
-              outline=FAINT, width=3)
-    d.line([cx, cy - s // 2 + 18, cx, cy + s // 2 - 30], fill=FAINT, width=3)
-    d.line([cx - 34, cy - s // 2 + 52, cx + 34, cy - s // 2 + 52],
-           fill=FAINT, width=3)
-    d.arc([cx - 40, cy + s // 2 - 70, cx, cy + s // 2 + 10], 90, 270,
-          fill=FAINT, width=3)
-    d.arc([cx, cy + s // 2 - 70, cx + 40, cy + s // 2 + 10], 270, 90,
-          fill=FAINT, width=3)
 
 
 def draw_photo_portrait(d, x0, y0, w, h):
@@ -223,6 +254,21 @@ def draw_photo_portrait(d, x0, y0, w, h):
     d.line([cx - 9, y0 + 97, cx + 9, y0 + 97], fill=(120, 70, 60), width=2)
 
 
+def draw_ghost_image(d, x0, y0, w, h):
+    """Second, fainter portrait: the same photo faded toward the paper."""
+    from PIL import Image, ImageOps
+    try:
+        photo = Image.open(PORTRAIT_FILE).convert("RGB")
+        fitted = ImageOps.fit(photo, (w, h), method=Image.LANCZOS,
+                              centering=(0.5, 0.35))
+        paper = Image.new("RGB", (w, h), PAPER)
+        faded = Image.blend(fitted, paper, 0.68)
+        d._image.paste(faded, (x0, y0))
+    except Exception:
+        pass
+    d.rectangle([x0, y0, x0 + w, y0 + h], outline=GHOST_LINE, width=1)
+
+
 def draw_stamp(page, box, country, kind, date, place, colour, angle,
                fonts):
     """One ink stamp: drawn on its own layer, rotated, pasted."""
@@ -234,10 +280,15 @@ def draw_stamp(page, box, country, kind, date, place, colour, angle,
                          outline=colour + (255,), width=3)
     ld.rounded_rectangle([24, 24, 24 + w - 8, 24 + h - 8], radius=8,
                          outline=colour + (255,), width=1)
-    text_c(ld, 20 + w // 2, 30, country, fonts["stamp"], colour + (255,))
-    text_c(ld, 20 + w // 2, 52, kind, fonts["stamp_sm"], colour + (255,))
-    text_c(ld, 20 + w // 2, 70, date, fonts["stamp"], colour + (255,))
-    text_c(ld, 20 + w // 2, 88, place, fonts["stamp_sm"], colour + (255,))
+    ys = [20 + h * 0.10, 20 + h * 0.32, 20 + h * 0.52, 20 + h * 0.72]
+    text_c(ld, 20 + w // 2, ys[0], country, fonts["stamp"],
+           colour + (255,))
+    text_c(ld, 20 + w // 2, ys[1], kind, fonts["stamp_sm"],
+           colour + (255,))
+    text_c(ld, 20 + w // 2, ys[2], date, fonts["stamp"],
+           colour + (255,))
+    text_c(ld, 20 + w // 2, ys[3], place, fonts["stamp_sm"],
+           colour + (255,))
     rot = layer.rotate(angle, expand=True, resample=Image.BICUBIC)
     page.paste(rot, (box[0] - 20, box[1] - 20), rot)
 
@@ -274,6 +325,45 @@ def draw_round_fee_stamp(page, cx, cy, r, angle, fonts):
     page.paste(rot, (cx - r - 20, cy - r - 20), rot)
 
 
+def draw_visa_box(d, x0, y0, x1, y1, fonts):
+    """Structured visitor-visa box: fields stacked label over value."""
+    d.rounded_rectangle([x0, y0, x1, y1], radius=4, fill=VISA_TINT,
+                        outline=NAVY_DK, width=2)
+    d.text((x0 + 20, y0 + 10), VISA["country"] + " · VISITOR VISA",
+           font=fonts["head_small"], fill=NAVY_DK)
+    d.text((x1 - 20, y0 + 12), VISA["native"], font=fonts["sub"],
+           fill=LABEL, anchor="ra")
+    d.line([x0 + 20, y0 + 36, x1 - 20, y0 + 36], fill=NAVY, width=1)
+    left = [("TYPE", VISA["type"]), ("VALID FROM", VISA["valid_from"]),
+            ("ISSUED AT", VISA["issued_at"])]
+    right = [("DURATION OF STAY", VISA["stay"]), ("UNTIL", VISA["until"]),
+             ("FEE", VISA["fee"])]
+    y = y0 + 44
+    for (l1, v1), (l2, v2) in zip(left, right):
+        d.text((x0 + 20, y), l1, font=fonts["label"], fill=LABEL)
+        d.text((x0 + 20, y + 13), v1, font=fonts["value_sm"], fill=INK)
+        d.text((x0 + 246, y), l2, font=fonts["label"], fill=LABEL)
+        d.text((x0 + 246, y + 13), v2, font=fonts["value_sm"], fill=INK)
+        y += 32
+
+
+def draw_endorsement_box(d, x0, y0, x1, y1, fonts):
+    """Structured ferry-route endorsement: one rule per line."""
+    d.rounded_rectangle([x0, y0, x1, y1], radius=4, outline=NAVY_DK,
+                        width=2)
+    d.rectangle([x0, y0, x1, y0 + 28], fill=NAVY_DK)
+    d.text((x0 + 20, y0 + 8), "FERRY ROUTE ENDORSEMENT",
+           font=fonts["label"], fill=(255, 255, 255))
+    d.text((x1 - 20, y0 + 8), "PORT SOLMAR · 09 FEB 2024",
+           font=fonts["note"], fill=(255, 255, 255), anchor="ra")
+    y = y0 + 36
+    for rule in ENDORSEMENT:
+        d.text((x0 + 20, y), rule, font=fonts["rule"], fill=INK)
+        y += 18
+    d.text((x0 + 20, y + 2), "No. 517204  ·  Fee paid at issue",
+           font=fonts["note"], fill=LABEL)
+
+
 def draw_spread_pil():
     from PIL import Image, ImageDraw
     img = Image.new("RGB", (W, H), COVER)
@@ -286,6 +376,10 @@ def draw_spread_pil():
                 width=2)
     d.line([500, 20, 500, 1004], fill=(120, 100, 70), width=2)
     d.line([524, 20, 524, 1004], fill=(120, 100, 70), width=2)
+
+    # guilloche security background, both pages, before any content
+    draw_guilloche(d, 28, 496, 24, 1000)
+    draw_guilloche(d, 528, 996, 24, 1000)
 
     # ================= left page: data page =================
     draw_lighthouse_emblem(d, 262, 54, 26)
@@ -314,36 +408,46 @@ def draw_spread_pil():
         y += 30
     d.line([54, 392, 470, 392], fill=PAPER_EDGE, width=1)
 
-    # lower data, two columns
+    # lower data, two columns (profession + licence are the 4th row)
     left = [("Date of birth / Rodenje", HOLDER["dob"]),
             ("Place of birth / Mjesto", HOLDER["pob"]),
-            ("Date of expiry / Vrijedi do", HOLDER["expiry"])]
+            ("Date of expiry / Vrijedi do", HOLDER["expiry"]),
+            ("Profession / Zanimanje", HOLDER["profession"])]
     right = [("Sex / Spol", HOLDER["sex"]),
              ("Date of issue / Izdano", HOLDER["issue"]),
-             ("Authority / Tijelo", HOLDER["authority"])]
+             ("Authority / Tijelo", HOLDER["authority"]),
+             ("Licence / Licenca", HOLDER["licence"])]
     y = 408
     for (l1, v1), (l2, v2) in zip(left, right):
         d.text((54, y), l1.upper(), font=fonts["label"], fill=LABEL)
         d.text((54, y + 14), v1, font=fonts["value"], fill=INK)
         d.text((272, y), l2.upper(), font=fonts["label"], fill=LABEL)
         d.text((272, y + 14), v2, font=fonts["value"], fill=INK)
-        y += 44
-    d.line([54, 548, 470, 548], fill=PAPER_EDGE, width=1)
+        y += 40
+    d.line([54, 568, 470, 568], fill=PAPER_EDGE, width=1)
 
     # holder's signature
-    d.text((54, 564), "HOLDER'S SIGNATURE / POTPIS", font=fonts["label"],
+    d.text((54, 584), "HOLDER'S SIGNATURE / POTPIS", font=fonts["label"],
            fill=LABEL)
-    d.text((54, 580), "Mara Ilse Kaldris", font=fonts["sig"], fill=INK)
-    d.line([54, 612, 300, 612], fill=LABEL, width=1)
+    d.text((54, 600), "Mara Ilse Kaldris", font=fonts["sig"], fill=INK)
+    d.line([54, 632, 300, 632], fill=LABEL, width=1)
 
-    # observations
-    d.text((54, 640), "OBSERVATIONS / NAPOMENE", font=fonts["label"],
+    # observations (wrapped narrow so the ghost image stays clear)
+    d.text((54, 656), "OBSERVATIONS / NAPOMENE", font=fonts["label"],
            fill=LABEL)
-    lines = wrap(d, OBSERVATION, fonts["value_sm"], 416)
-    y = 660
+    lines = wrap(d, OBSERVATION, fonts["value_sm"], 300)
+    y = 676
     for ln in lines:
         d.text((54, y), ln, font=fonts["value_sm"], fill=INK)
         y += 19
+
+    # ghost image: the same portrait, faded, bottom-right of the page
+    draw_ghost_image(d, 375, 720, 95, 130)
+    text_c(d, 422, 854, "GHOST IMAGE", fonts["caption"], LABEL)
+
+    # repeating security strip above the MRZ
+    strip = "SOLMARRA · REPUBLIKA E SOLMARRËS · "
+    text_c(d, 262, 866, strip * 2, fonts["caption"], (170, 175, 170))
 
     # machine-readable zone
     d.line([54, 880, 470, 880], fill=NAVY, width=1)
@@ -360,36 +464,27 @@ def draw_spread_pil():
     d.text((958, 44), "12", font=fonts["sub"], fill=LABEL, anchor="ra")
     d.line([554, 108, 970, 108], fill=NAVY, width=2)
 
-    draw_faint_anchor(d, 762, 350, 200)
+    # full structured visitor-visa box
+    draw_visa_box(d, 554, 120, 970, 258, fonts)
 
+    # eight stamps, compact grid
     angles = [-4, 3, -2, 5, -3, 4, -5, 2]
     boxes = []
     for r in range(4):
-        y0 = 130 + r * 114
-        boxes.append((560, y0, 756, y0 + 100))
-        boxes.append((772, y0, 968, y0 + 100))
+        y0 = 270 + r * 86
+        boxes.append((560, y0, 756, y0 + 78))
+        boxes.append((772, y0, 968, y0 + 78))
     for (country, kind, date, place, colour), box, ang in zip(
             STAMPS, boxes, angles):
         draw_stamp(img, box, country, kind, date, place, colour, ang,
                    fonts)
 
-    # conditions of issue
-    d.rounded_rectangle([554, 592, 970, 742], radius=4, outline=NAVY_DK,
-                        width=2)
-    d.rectangle([554, 592, 970, 622], fill=NAVY_DK)
-    d.text((574, 600), "CONDITIONS OF ISSUE", font=fonts["label"],
-           fill=(255, 255, 255))
-    lines = wrap(d, CONDITIONS, fonts["value_sm"], 384)
-    y = 632
-    for ln in lines:
-        d.text((574, y), ln, font=fonts["value_sm"], fill=INK)
-        y += 19
-    d.text((574, 722), "No. 517204  ·  Fee paid at issue",
-           font=fonts["note"], fill=LABEL)
+    # structured ferry-route endorsement
+    draw_endorsement_box(d, 554, 618, 970, 744, fonts)
 
     # red stamps: sea-only + ferry fee
-    draw_red_rect_stamp(img, (554, 762, 768, 852), SEA_ONLY, -3, fonts)
-    draw_round_fee_stamp(img, 872, 807, 50, -8, fonts)
+    draw_red_rect_stamp(img, (554, 758, 768, 848), SEA_ONLY, -3, fonts)
+    draw_round_fee_stamp(img, 872, 803, 48, -8, fonts)
 
     # footer
     d.line([554, 880, 970, 880], fill=NAVY, width=1)
@@ -510,6 +605,18 @@ class Canvas:
     def text_c(self, cx, y, s, c, scale=2):
         self.text(cx - self.text_w(s, scale) // 2, y, s, c, scale)
 
+    def guilloche(self, x0, x1, y0, y1, c):
+        """Light wavy security lines (simplified, every 24 px)."""
+        import math
+        y = y0 + 6
+        while y < y1:
+            x = x0
+            while x <= x1:
+                self.set(x, y + int(3 * math.sin(
+                    (x - x0) * 2 * math.pi / 72)), c)
+                x += 2
+            y += 24
+
 
 def png_bytes(cv):
     import struct, zlib, binascii
@@ -547,6 +654,8 @@ def draw_spread_stdlib():
     cv = Canvas(W, H, COVER)
     cv.rect(24, 20, 500, 1004, PAPER)
     cv.rect(524, 20, 1000, 1004, PAPER)
+    cv.guilloche(28, 496, 24, 1000, GUILL)
+    cv.guilloche(528, 996, 24, 1000, GUILL)
     # left page
     cv.text_c(262, 48, COUNTRY, NAVY_DK, 3)
     cv.text_c(262, 76, COUNTRY_NATIVE, LABEL, 2)
@@ -578,15 +687,20 @@ def draw_spread_stdlib():
                        ("SEX", HOLDER["sex"]),
                        ("DATE OF ISSUE", HOLDER["issue"]),
                        ("DATE OF EXPIRY", HOLDER["expiry"]),
-                       ("AUTHORITY", HOLDER["authority"])]:
+                       ("AUTHORITY", HOLDER["authority"]),
+                       ("PROFESSION", HOLDER["profession"]),
+                       ("LICENCE", HOLDER["licence"])]:
         cv.text(54, y, label, LABEL, 1)
         cv.text(54, y + 10, val, INK, 2)
-        y += 34
-    y = 620
+        y += 32
+    y = 648
     cv.text(54, y, "OBSERVATIONS", LABEL, 1)
     for ln in _wrap_text(OBSERVATION, 52):
         y += 16
         cv.text(54, y, ln, INK, 1)
+    # ghost image placeholder
+    cv.frame(375, 720, 470, 850, GHOST_LINE, 1)
+    cv.text_c(422, 780, "GHOST", GHOST_LINE, 1)
     l1, l2 = mrz_lines()
     cv.hline(54, 470, 880, NAVY, 1)
     cv.text(54, 892, l1, INK, 1)
@@ -594,30 +708,41 @@ def draw_spread_stdlib():
     # right page
     cv.text_c(762, 48, "VISAS", NAVY_DK, 3)
     cv.hline(554, 970, 100, NAVY, 2)
+    # visitor-visa box
+    cv.frame(554, 120, 970, 258, NAVY_DK, 2)
+    cv.text(574, 132, "DRAVNIA . VISITOR VISA", NAVY_DK, 2)
+    cv.text(574, 160, "TYPE: C . SINGLE ENTRY", INK, 1)
+    cv.text(574, 178, "STAY: 30 DAYS", INK, 1)
+    cv.text(574, 196, "VALID: 01 MAR - 30 APR 2024", INK, 1)
+    cv.text(574, 214, "ISSUED: KESTREL PORT, 15 FEB 2024", INK, 1)
+    cv.text(574, 232, "FEE: 40 DRV", INK, 1)
+    # stamps
     boxes = []
     for r in range(4):
-        y0 = 130 + r * 114
-        boxes.append((560, y0, 756, y0 + 100))
-        boxes.append((772, y0, 968, y0 + 100))
+        y0 = 270 + r * 86
+        boxes.append((560, y0, 756, y0 + 78))
+        boxes.append((772, y0, 968, y0 + 78))
     for (country, kind, date, place, colour), (x0, y0, x1, y1) in zip(
             STAMPS, boxes):
         cv.frame(x0, y0, x1, y1, colour, 2)
-        cv.text_c((x0 + x1) // 2, y0 + 12, country, colour, 2)
-        cv.text_c((x0 + x1) // 2, y0 + 36, kind, colour, 1)
-        cv.text_c((x0 + x1) // 2, y0 + 56, date, colour, 2)
-        cv.text_c((x0 + x1) // 2, y0 + 80, place, colour, 1)
-    cv.frame(554, 592, 970, 742, NAVY_DK, 2)
-    cv.text(574, 606, "CONDITIONS OF ISSUE", NAVY_DK, 1)
-    y = 630
-    for ln in _wrap_text(CONDITIONS, 48):
-        cv.text(574, y, ln, INK, 1)
-        y += 16
-    cv.frame(554, 762, 768, 852, RED, 2)
-    cv.text_c(661, 776, "ARRIVAL BY SEA ONLY", RED, 1)
-    cv.text_c(661, 796, "NO AIRPORT IN", RED, 1)
-    cv.text_c(661, 816, "SOLMARRA", RED, 2)
-    cv.ellipse(822, 757, 922, 857, RED)
-    cv.ellipse(830, 765, 914, 849, PAPER)
+        cv.text_c((x0 + x1) // 2, y0 + 10, country, colour, 2)
+        cv.text_c((x0 + x1) // 2, y0 + 30, kind, colour, 1)
+        cv.text_c((x0 + x1) // 2, y0 + 48, date, colour, 2)
+        cv.text_c((x0 + x1) // 2, y0 + 64, place, colour, 1)
+    # endorsement box
+    cv.frame(554, 618, 970, 744, NAVY_DK, 2)
+    cv.text(574, 630, "FERRY ROUTE ENDORSEMENT", NAVY_DK, 1)
+    y = 652
+    for rule in ENDORSEMENT:
+        for ln in _wrap_text(rule, 48):
+            cv.text(574, y, ln, INK, 1)
+            y += 16
+    cv.frame(554, 758, 768, 848, RED, 2)
+    cv.text_c(661, 772, "ARRIVAL BY SEA ONLY", RED, 1)
+    cv.text_c(661, 792, "NO AIRPORT IN", RED, 1)
+    cv.text_c(661, 812, "SOLMARRA", RED, 2)
+    cv.ellipse(824, 755, 920, 851, RED)
+    cv.ellipse(832, 763, 912, 843, PAPER)
     cv.text_c(872, 782, "FERRY", RED, 2)
     cv.text_c(872, 800, "12 SOL", RED, 2)
     return png_bytes(cv)
